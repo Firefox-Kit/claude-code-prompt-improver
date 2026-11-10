@@ -206,7 +206,7 @@ Claude proceeds immediately without questions.
 - **Fire wide, self-cancel cheap** - a missed nudge costs a full correction loop, a false fire costs a few tokens Claude ignores. That asymmetry justifies high-recall gates, so every nudge leads with a condition ("If this is X... if not, ignore") and dismisses itself when it does not fit.
 - **Trust user intent** - only ask when genuinely unclear; never block.
 - **Max 1-6 questions** - enough for complex scenarios, still focused.
-- **Transparent** - injected context is visible in the conversation.
+- **Transparent** - Claude reads the injected context, but it is not displayed on the chat screen.
 
 ## Architecture
 
