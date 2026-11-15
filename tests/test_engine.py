@@ -8,6 +8,7 @@ shape, fragment presence/absence by trigger, bypass exact-equality,
 robustness (bad JSON, unknown/missing event), and the zero-Python
 extensibility guarantee via a drop-in fixture nudge.
 """
+import io
 import json
 import os
 import subprocess
@@ -64,11 +65,11 @@ def test_userpromptsubmit_shape_and_event_echo():
 def test_improve_fragment_always_present_on_ups():
     """The improve wrapper is always present on UserPromptSubmit"""
     context = context_of(
-        run_engine("UserPromptSubmit", {"prompt": "fix the bug"}),
+        run_engine("UserPromptSubmit", {"prompt": "rename the helper"}),
         "UserPromptSubmit",
     )
     assert "PROMPT EVALUATION" in context
-    assert "fix the bug" in context
+    assert "rename the helper" not in context
 
 
 # ---------------------------------------------------------------------------
@@ -101,31 +102,12 @@ def test_non_workflow_prompt_has_no_workflow_guidance():
 # Bypass exact-equality
 # ---------------------------------------------------------------------------
 
-def test_asterisk_bypass_exact_equality():
-    """* prefix yields exactly the stripped prompt, no other fragments merged"""
-    context = context_of(
-        run_engine("UserPromptSubmit", {"prompt": "* build a workflow"}),
-        "UserPromptSubmit",
-    )
-    assert context == "build a workflow"
-
-
-def test_slash_bypass_passthrough():
-    """/ prefix passes through unchanged"""
-    context = context_of(
-        run_engine("UserPromptSubmit", {"prompt": "/commit"}),
-        "UserPromptSubmit",
-    )
-    assert context == "/commit"
-
-
-def test_hash_bypass_passthrough():
-    """# prefix passes through unchanged"""
-    context = context_of(
-        run_engine("UserPromptSubmit", {"prompt": "# note for later"}),
-        "UserPromptSubmit",
-    )
-    assert context == "# note for later"
+@pytest.mark.parametrize("prompt", ["* build a workflow", "/commit", "# note for later"])
+def test_bypass_prefix_emits_nothing(prompt):
+    """*, /, and # prefixes exit 0 with no output (nothing is echoed back)"""
+    result = run_engine("UserPromptSubmit", {"prompt": prompt})
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == ""
 
 
 MACHINE_EVENTS = [
@@ -285,11 +267,9 @@ def test_plan_mode_evaluates_on_any_prompt():
 
 def test_plan_mode_silent_on_bypass():
     """The plan-mode nudge respects the engine's default bypass (* prefix stays silent)"""
-    context = context_of(
-        run_engine("UserPromptSubmit", {"prompt": "* build a workflow"}),
-        "UserPromptSubmit",
-    )
-    assert "judge whether this task is complex" not in context
+    result = run_engine("UserPromptSubmit", {"prompt": "* build a workflow"})
+    assert result.returncode == 0, result.stderr
+    assert "judge whether this task is complex" not in result.stdout
 
 
 def test_subagentstart_routing_fires():
@@ -320,18 +300,23 @@ def test_bad_json_exits_zero():
     "summarize the café notes",  # é decodes to mojibake under cp1252
     "fix the Łódź import",  # Ł has byte 0x81, which cp1252 cannot decode
 ])
-def test_utf8_stdin_under_non_utf8_locale(prompt):
+def test_utf8_stdin_under_non_utf8_locale(prompt, monkeypatch):
     """Stdin is decoded as UTF-8 even when the locale encoding is not (Windows)"""
+    raw = json.dumps({"prompt": prompt}, ensure_ascii=False).encode("utf-8")
+    # In-process: the prompt survives a cp1252 text-mode stdin byte for byte.
+    monkeypatch.setattr(sys, "stdin", io.TextIOWrapper(io.BytesIO(raw), encoding="cp1252"))
+    assert engine._read_payload() == {"prompt": prompt}
+    # End to end: the hook still exits 0 and the nudges still fire.
     env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
     result = subprocess.run(
         [sys.executable, str(ENGINE), "UserPromptSubmit"],
-        input=json.dumps({"prompt": prompt}, ensure_ascii=False).encode("utf-8"),
+        input=raw,
         capture_output=True,
         env=env,
     )
     assert result.returncode == 0, result.stderr
     context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
-    assert f'Original user request: "{prompt}"' in context
+    assert "PROMPT EVALUATION" in context
 
 
 def test_empty_stdin_exits_zero():

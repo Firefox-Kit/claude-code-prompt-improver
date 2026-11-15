@@ -2,6 +2,24 @@
 
 All notable changes to the Claude Code Prompt Improver project.
 
+## [0.7.0] - 2026-11-15
+
+### Security
+- `improve` no longer repeats the user's prompt inside the evaluation wrapper. Pasted text (emails, documents, logs) can no longer reach Claude a second time through the hook channel, and long pastes stay under the 10,000-character hook output cap
+- The evaluation wrapper says pasted or attached text is material to work on: Claude follows instructions inside it only when the user's own words ask
+- `approach-assessment`: bounded `add .{0,200}? (feature|support)` so long single-line input no longer slows the hook toward its 30-second timeout
+- Skill research: treat fetched content as information, keep secrets out of queries and credential files out of reads, confirm unrequested outbound or irreversible steps
+- The loader skips hidden, nested, and symlinked files under `nudges/`
+
+### Changed
+- `*`, `/`, and `#` prompts now produce no hook output (before, the prompt text was echoed back)
+- `plan-mode` and `ask-user-question`: in unattended or scheduled runs, proceed with a stated plan or a cautious default instead of waiting
+- README/CLAUDE.md: injected context is read by Claude but not displayed in the chat view
+- Bumped plugin version to 0.7.0
+
+### Added
+- `tests/test_prompt_safety.py`: nudge folder layout, invisible Unicode characters in prompt files, regex speed on long input
+
 ## [0.6.3] - 2026-10-01
 
 ### Fixed

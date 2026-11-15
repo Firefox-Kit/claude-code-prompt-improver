@@ -248,6 +248,20 @@ def test_load_rules_directory_must_match_event(tmp_path, monkeypatch):
     assert "01-bad" not in loaded_ids
 
 
+def test_load_rules_skips_hidden_nested_and_symlinked(tmp_path, monkeypatch):
+    """Hidden files, hidden or nested folders, and symlinks never load"""
+    monkeypatch.setattr(rules, "NUDGES_DIR", tmp_path)
+    _write_rule(tmp_path / "UserPromptSubmit", "00-good.json", "UserPromptSubmit")
+    _write_rule(tmp_path / "UserPromptSubmit", ".hidden.json", "UserPromptSubmit")
+    _write_rule(tmp_path / ".cache" / "UserPromptSubmit", "nested.json", "UserPromptSubmit")
+    _write_rule(tmp_path / "outside", "target.json", "UserPromptSubmit")
+    try:
+        (tmp_path / "UserPromptSubmit" / "link.json").symlink_to(tmp_path / "outside" / "target.json")
+    except OSError:
+        pass  # Windows without symlink privilege: the other cases still run
+    assert {r["id"] for r in rules.load_rules()} == {"00-good"}
+
+
 def test_load_rules_skips_loose_files(tmp_path, monkeypatch):
     """A JSON file directly in nudges/ (no event subdir) is skipped"""
     monkeypatch.setattr(rules, "NUDGES_DIR", tmp_path)

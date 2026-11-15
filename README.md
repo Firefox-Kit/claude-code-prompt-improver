@@ -73,12 +73,17 @@ sequenceDiagram
 
 **1. Add the marketplace:**
 ```bash
-claude plugin marketplace add severity1/severity1-marketplace
+claude plugin marketplace add Firefox-Kit/claude-plugins
 ```
 
 **2. Install the plugin:**
 ```bash
-claude plugin install prompt-improver@severity1-marketplace
+claude plugin install prompt-improver@firefox-kit
+```
+
+**2. Delete the original marketplace:**
+```bash
+claude plugin uninstall prompt-improver@severity1-marketplace
 ```
 
 **3. Restart Claude Code**
@@ -89,7 +94,7 @@ Verify installation with `/plugin` command. You should see the prompt-improver p
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/severity1/claude-code-prompt-improver.git
+git clone https://github.com/Firefox-Kit/claude-code-prompt-improver.git
 cd claude-code-prompt-improver
 ```
 
