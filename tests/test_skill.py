@@ -26,7 +26,7 @@ def test_skill_md_exists():
 
 def test_yaml_frontmatter():
     """Test that SKILL.md has valid YAML frontmatter"""
-    content = SKILL_MD.read_text()
+    content = SKILL_MD.read_text(encoding="utf-8")
 
     # Check for opening ---
     assert content.startswith("---\n"), "SKILL.md must start with ---"
@@ -62,7 +62,7 @@ def test_yaml_frontmatter():
 
 def test_skill_content_structure():
     """Test that SKILL.md has expected content sections"""
-    content = SKILL_MD.read_text()
+    content = SKILL_MD.read_text(encoding="utf-8")
 
     # Check for main sections (updated for v0.4.0 with 4 phases)
     expected_sections = [
@@ -100,14 +100,14 @@ def test_references_directory():
         assert file_path.is_file(), f"Reference path is not a file: {filename}"
 
         # Check file is not empty
-        content = file_path.read_text()
+        content = file_path.read_text(encoding="utf-8")
         assert len(content) > 100, f"Reference file seems too small: {filename}"
 
     print(f"✓ References directory has all {len(expected_files)} expected files")
 
 def test_forward_slash_paths():
     """Test that all file paths use forward slashes (Unix style)"""
-    content = SKILL_MD.read_text()
+    content = SKILL_MD.read_text(encoding="utf-8")
 
     # Check for backslashes in file paths
     # Allow backslashes in code blocks but not in markdown links
@@ -129,7 +129,7 @@ def test_reference_file_structure():
     ]
 
     for filename in reference_files:
-        content = (REFERENCES_DIR / filename).read_text()
+        content = (REFERENCES_DIR / filename).read_text(encoding="utf-8")
 
         # Should start with # heading
         assert content.strip().startswith("#"), \
@@ -144,7 +144,7 @@ def test_reference_file_structure():
 
 def test_skill_references_valid():
     """Test that SKILL.md references to other files are valid"""
-    content = SKILL_MD.read_text()
+    content = SKILL_MD.read_text(encoding="utf-8")
 
     # Find all markdown links
     links = re.findall(r'\[.*?\]\((.*?)\)', content)
@@ -162,7 +162,7 @@ def test_skill_references_valid():
 
 def test_skill_line_count():
     """Test that SKILL.md is under recommended 500 lines"""
-    content = SKILL_MD.read_text()
+    content = SKILL_MD.read_text(encoding="utf-8")
     line_count = content.count("\n")
 
     # Warning if over 500 lines (best practice)

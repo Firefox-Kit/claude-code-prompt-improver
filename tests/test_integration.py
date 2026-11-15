@@ -31,16 +31,17 @@ def run_hook(prompt):
     if result.returncode != 0:
         raise Exception(f"Hook failed: {result.stderr}")
 
-    return json.loads(result.stdout)
+    # No output at all is a valid no-op (bypass prefixes, machine events).
+    return json.loads(result.stdout) if result.stdout.strip() else {}
 
 def test_plugin_configuration():
     """Test that plugin.json is properly configured"""
     assert PLUGIN_JSON.exists(), "plugin.json not found"
 
-    config = json.loads(PLUGIN_JSON.read_text())
+    config = json.loads(PLUGIN_JSON.read_text(encoding="utf-8"))
 
-    # Check version is 0.6.3
-    assert config["version"] == "0.6.3", f"Expected version 0.6.3, got {config['version']}"
+    # Check version is 0.7.0
+    assert config["version"] == "0.7.0", f"Expected version 0.7.0, got {config['version']}"
 
     # Check hooks field is NOT present (standard hooks/hooks.json is auto-discovered)
     assert "hooks" not in config, "The 'hooks' field should not be present (standard location is auto-discovered)"
@@ -57,7 +58,7 @@ def test_hooks_json_schema():
     group (issue #47), but `claude plugin validate` does not flag them, so
     this guards the regression.
     """
-    config = json.loads((PROJECT_ROOT / "hooks" / "hooks.json").read_text())
+    config = json.loads((PROJECT_ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))
 
     for event, groups in config["hooks"].items():
         for i, group in enumerate(groups):
@@ -78,7 +79,7 @@ def test_end_to_end_flow():
     # Should get evaluation wrapper
     context = output["hookSpecificOutput"]["additionalContext"]
     assert "PROMPT EVALUATION" in context or "EVALUATE" in context
-    assert "add authentication" in context
+    assert "add authentication" not in context  # never echoed back
 
     # Should mention skill for vague cases
     assert "skill" in context.lower()
@@ -87,21 +88,9 @@ def test_end_to_end_flow():
 
 def test_bypass_flow():
     """Test that bypass mechanism works end-to-end"""
-    # Test asterisk bypass
-    output = run_hook("* just do it")
-    context = output["hookSpecificOutput"]["additionalContext"]
-    assert context == "just do it"
-    assert "skill" not in context.lower()
-
-    # Test slash command
-    output = run_hook("/commit")
-    context = output["hookSpecificOutput"]["additionalContext"]
-    assert context == "/commit"
-
-    # Test hash prefix
-    output = run_hook("# note for later")
-    context = output["hookSpecificOutput"]["additionalContext"]
-    assert context == "# note for later"
+    # Asterisk, slash, and hash prefixes all emit nothing
+    for prompt in ("* just do it", "/commit", "# note for later"):
+        assert run_hook(prompt) == {}, f"bypass prefix emitted output: {prompt!r}"
 
     print("✓ Bypass mechanisms work end-to-end")
 
@@ -111,7 +100,7 @@ def test_skill_file_integrity():
     skill_md = SKILL_DIR / "SKILL.md"
     assert skill_md.exists(), "SKILL.md missing"
 
-    content = skill_md.read_text()
+    content = skill_md.read_text(encoding="utf-8")
     assert content.startswith("---\n"), "SKILL.md missing YAML frontmatter"
     assert "name: prompt-improver" in content, "Skill name incorrect"
 
@@ -187,7 +176,7 @@ def test_hook_output_consistency():
         # All should have evaluation wrapper
         context = output["hookSpecificOutput"]["additionalContext"]
         assert "EVALUATE" in context or "evaluate" in context.lower()
-        assert prompt in context
+        assert "Original user request" not in context
 
     print(f"✓ Hook output consistent across {len(prompts)} different prompts")
 
@@ -195,17 +184,17 @@ def test_architecture_separation():
     """Test that architecture properly separates concerns"""
     # Engine entry point should exist and stay a small dispatcher (< 200 lines)
     assert ENGINE.exists(), "scripts/engine.py not found"
-    engine_lines = len(ENGINE.read_text().split("\n"))
+    engine_lines = len(ENGINE.read_text(encoding="utf-8").split("\n"))
     assert engine_lines < 200, f"Engine too large: {engine_lines} lines (expected <200)"
 
     # The evaluation wrapper lives in the builtins module, not the engine.
-    builtins_content = (PROJECT_ROOT / "scripts" / "nudge_builtins.py").read_text()
+    builtins_content = (PROJECT_ROOT / "scripts" / "nudge_builtins.py").read_text(encoding="utf-8")
     assert "PROMPT EVALUATION" in builtins_content
-    assert "PROMPT EVALUATION" not in ENGINE.read_text(), \
+    assert "PROMPT EVALUATION" not in ENGINE.read_text(encoding="utf-8"), \
         "Engine should dispatch, not embed evaluation prose"
 
     # SKILL.md should contain research and question logic (now 4 phases)
-    skill_content = (SKILL_DIR / "SKILL.md").read_text()
+    skill_content = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
     assert "Phase 1" in skill_content or "phase 1" in skill_content.lower()
     assert "Phase 2" in skill_content or "phase 2" in skill_content.lower()
     assert "Research" in skill_content

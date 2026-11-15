@@ -126,14 +126,19 @@ def load_rules():
         return rules
 
     for path in sorted(NUDGES_DIR.glob("**/*.json")):
-        # The parent directory names the event; files loose in nudges/ are skipped.
-        dir_event = path.parent.name
-        if dir_event == NUDGES_DIR.name:
-            print(f"[engine] skipping {path.name}: not in an event subdirectory", file=sys.stderr)
+        # Only visible nudges/<EventName>/<name>.json files load. Checks use the
+        # path relative to nudges/: the plugin itself lives under ~/.claude.
+        rel = path.relative_to(NUDGES_DIR)
+        if len(rel.parts) != 2:
+            print(f"[engine] skipping {rel}: not in an event subdirectory", file=sys.stderr)
             continue
+        if any(part.startswith(".") for part in rel.parts) or path.is_symlink() or path.parent.is_symlink():
+            print(f"[engine] skipping {rel}: hidden or symlinked", file=sys.stderr)
+            continue
+        dir_event = path.parent.name
 
         try:
-            data = json.loads(path.read_text())
+            data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             print(f"[engine] skipping {path.name}: {exc}", file=sys.stderr)
             continue
