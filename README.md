@@ -73,12 +73,17 @@ sequenceDiagram
 
 **1. Add the marketplace:**
 ```bash
-claude plugin marketplace add severity1/severity1-marketplace
+claude plugin marketplace add Firefox-Kit/claude-plugins
 ```
 
 **2. Install the plugin:**
 ```bash
-claude plugin install prompt-improver@severity1-marketplace
+claude plugin install prompt-improver@firefox-kit
+```
+
+**2. Delete the original marketplace:**
+```bash
+claude plugin uninstall prompt-improver@severity1-marketplace
 ```
 
 **3. Restart Claude Code**
@@ -89,7 +94,7 @@ Verify installation with `/plugin` command. You should see the prompt-improver p
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/severity1/claude-code-prompt-improver.git
+git clone https://github.com/Firefox-Kit/claude-code-prompt-improver.git
 cd claude-code-prompt-improver
 ```
 
@@ -206,7 +211,7 @@ Claude proceeds immediately without questions.
 - **Fire wide, self-cancel cheap** - a missed nudge costs a full correction loop, a false fire costs a few tokens Claude ignores. That asymmetry justifies high-recall gates, so every nudge leads with a condition ("If this is X... if not, ignore") and dismisses itself when it does not fit.
 - **Trust user intent** - only ask when genuinely unclear; never block.
 - **Max 1-6 questions** - enough for complex scenarios, still focused.
-- **Transparent** - Claude reads the injected context, but it is not displayed on the chat screen.
+- **Transparent** - injected context is visible in the conversation.
 
 ## Architecture
 
