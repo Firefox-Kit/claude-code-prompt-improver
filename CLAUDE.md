@@ -36,8 +36,9 @@ A declarative hook engine driven by a JSON nudge registry. One engine dispatches
   - Plan guidance tests: `pytest tests/test_plan_guidance.py`
 
 **Installation:**
-- Add marketplace: `claude plugin marketplace add severity1/severity1-marketplace`
-- Via marketplace: `claude plugin install prompt-improver@severity1-marketplace`
+- Add marketplace: `claude plugin marketplace add Firefox-Kit/claude-plugins`
+- Via marketplace: `claude plugin install prompt-improver@firefox-kit`
+- Delete the original marketplace: `claude plugin install prompt-improver@firefox-kit`
 - Local dev: `claude plugin marketplace add /path/to/claude-code-prompt-improver/.dev-marketplace/.claude-plugin/marketplace.json` then `claude plugin install prompt-improver@local-dev`
 - Manual: copy `scripts/engine.py`, `scripts/rules.py`, `scripts/nudge_builtins.py`, and the whole `nudges/` tree with `cp -r` (keep `scripts/` and `nudges/` siblings), then add per-event `engine.py <EventName>` dispatch entries to settings.json
 <!-- END AUTO-MANAGED -->
@@ -115,7 +116,7 @@ A declarative hook engine driven by a JSON nudge registry. One engine dispatches
 - Integration test `test_plugin_configuration` asserts both fields are absent
 
 **Bypass prefixes:**
-- `*` prefix: Output nothing
+- `*` prefix: Skip evaluation entirely, strip prefix from prompt (improve emits the bare prompt)
 - `/` prefix: Slash commands bypass automatically
 - `#` prefix: Memorize commands bypass automatically
 - Harness machine events (prompt starts with `<task-notification>`, `<command-name>`, `<command-message>`, `<local-command-stdout|stderr|caveat>`, or `<system-reminder>`) bypass all prompt nudges; the prefix list lives once in `nudge_builtins.is_machine_event`, shared by the engine and both handlers
