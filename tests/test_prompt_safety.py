@@ -7,6 +7,9 @@ tests fail a pull request that hides a nudge where reviewers would not look,
 smuggles invisible characters into prompt text, or adds a keyword regex that
 slows down on long pasted input.
 """
+import json
+import os
+import subprocess
 import sys
 import time
 import unicodedata
@@ -78,3 +81,35 @@ def test_keyword_regexes_stay_fast_on_long_input():
                 pattern.search(long_input)
                 elapsed = time.perf_counter() - start
                 assert elapsed < 1.0, f"{rule['id']}: {pattern.pattern!r} took {elapsed:.2f}s"
+
+
+def test_hook_commands_ignore_python_environment():
+    """Every hook command runs Python with -E -s on both sides of the fallback"""
+    config = json.loads((PROJECT_ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+    for event, groups in config["hooks"].items():
+        for group in groups:
+            for hook in group["hooks"]:
+                for half in hook["command"].split("||"):
+                    words = half.split()
+                    assert words[:3] in (["python3", "-E", "-s"], ["python", "-E", "-s"]), \
+                        f"hooks.{event}: {half.strip()!r} does not start with python3/python -E -s"
+                    # -I also drops the script folder from sys.path, so the engine's imports fail.
+                    assert "-I" not in words, f"hooks.{event}: -I breaks the engine's sibling imports"
+
+
+def test_engine_with_hook_flags_ignores_pythonpath(tmp_path):
+    """With -E -s a module planted on PYTHONPATH cannot replace the standard library"""
+    (tmp_path / "json.py").write_text("raise SystemExit('planted json module was imported')\n", encoding="utf-8")
+    env = {**os.environ, "PYTHONPATH": str(tmp_path)}
+    engine = str(PROJECT_ROOT / "scripts" / "engine.py")
+    payload = '{"prompt": "fix typo in README"}'
+
+    hardened = subprocess.run([sys.executable, "-E", "-s", engine, "UserPromptSubmit"],
+                              input=payload, capture_output=True, text=True, env=env)
+    assert hardened.returncode == 0, hardened.stderr
+    assert "PROMPT EVALUATION" in hardened.stdout
+
+    # Control: without the flags the planted module wins, so the test proves something.
+    plain = subprocess.run([sys.executable, engine, "UserPromptSubmit"],
+                           input=payload, capture_output=True, text=True, env=env)
+    assert "PROMPT EVALUATION" not in plain.stdout

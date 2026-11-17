@@ -100,7 +100,7 @@ A declarative hook engine driven by a JSON nudge registry. One engine dispatches
 - PreToolUse/SubagentStart format: same shape with the matching `hookEventName`
 - The engine echoes the dispatched event name into `hookEventName`
 - Exit code 0 for all success paths and all no-op paths
-- Hook commands use `python3 || python` fallback for Windows compatibility
+- Hook commands use `python3 -E -s ... || python -E -s ...`: the fallback keeps Windows working, `-E -s` ignores `PYTHON*` environment variables and the user site-packages. Never use `-I` (it drops the script folder from `sys.path` and breaks the engine's imports)
 
 **Declarative nudge schema (nudges/<EventName>/*.json):**
 - Each rule: `id` (required), `event` (required, validated against the capability matrix), `description` (optional, never emitted)

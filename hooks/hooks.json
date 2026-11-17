@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" UserPromptSubmit || python \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" UserPromptSubmit"
+            "command": "python3 -E -s \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" UserPromptSubmit || python -E -s \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" UserPromptSubmit"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" PreToolUse || python \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" PreToolUse"
+            "command": "python3 -E -s \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" PreToolUse || python -E -s \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" PreToolUse"
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" SubagentStart || python \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" SubagentStart"
+            "command": "python3 -E -s \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" SubagentStart || python -E -s \"${CLAUDE_PLUGIN_ROOT}/scripts/engine.py\" SubagentStart"
           }
         ]
       }
