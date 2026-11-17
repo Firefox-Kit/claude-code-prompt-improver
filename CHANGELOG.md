@@ -2,6 +2,17 @@
 
 All notable changes to the Claude Code Prompt Improver project.
 
+## [0.7.1] - 2026-11-16
+
+### Security
+- `hooks/hooks.json`: every hook command now runs `python3 -E -s` (and `python -E -s` in the Windows fallback), so `PYTHONPATH`, other `PYTHON*` variables, and the user site-packages can no longer replace standard-library modules the engine imports
+
+### Added
+- `tests/test_prompt_safety.py`: the hook commands must carry `-E -s` on both sides of the fallback and must not use `-I`; the engine keeps working when a `json.py` is planted on `PYTHONPATH`
+
+### Changed
+- Bumped plugin version to 0.7.1
+
 ## [0.7.0] - 2026-11-15
 
 ### Security
